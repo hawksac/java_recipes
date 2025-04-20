@@ -1,2 +1,8 @@
+com/example/RecipeEditorController.class
+com/example/WelcomeController.class
 com/example/App.class
 module-info.class
+com/example/model/Recipe.class
+com/example/util/JsonUtil.class
+com/example/model/Ingredient.class
+com/example/model/Step.class
