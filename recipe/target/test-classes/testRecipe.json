@@ -1,0 +1,13 @@
+{
+    "name" : "Test Pancakes",
+    "description" : "Fluffy test pancakes",
+    "ingredients" : [
+      { "name":"Flour", "amount":"1", "unit":"cup" },
+      { "name":"Milk",  "amount":"0.75", "unit":"cup" }
+    ],
+    "steps" : [
+      { "description":"Mix dry ingredients" },
+      { "description":"Add milk and stir" }
+    ]
+  }
+  

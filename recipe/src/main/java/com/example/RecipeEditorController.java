@@ -9,9 +9,11 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+// import javafx.scene.Node;
+// import javafx.scene.Parent;
+// import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class RecipeEditorController {
@@ -51,6 +54,22 @@ public class RecipeEditorController {
         // set items
         ingredientsTable.setItems(ingredients);
         stepsList.setItems(steps);
+    }
+
+    /**
+     * Called by WelcomeController when opening an existing recipe.
+     */
+    public void loadRecipe(Recipe recipe) {
+        // populate form
+        nameField.setText(recipe.getName());
+        descriptionArea.setText(recipe.getDescription());
+        ingredients.setAll(recipe.getIngredients());
+        // convert Step objects to their string descriptions
+        List<String> descs = recipe.getSteps()
+                .stream()
+                .map(Step::getDescription)
+                .collect(Collectors.toList());
+        steps.setAll(descs);
     }
 
     @FXML
@@ -91,25 +110,44 @@ public class RecipeEditorController {
 
     @FXML
     private void onSaveRecipe(ActionEvent e) {
-        // collect into model
+        // 1) Build the domain object
         Recipe recipe = new Recipe();
         recipe.setName(nameField.getText());
         recipe.setDescription(descriptionArea.getText());
         recipe.setIngredients(List.copyOf(ingredients));
-        recipe.setSteps(steps.stream().map(Step::new).collect(Collectors.toList()));
+        recipe.setSteps(
+                steps.stream()
+                        .map(Step::new)
+                        .collect(Collectors.toList()));
 
-        // choose file
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save Recipe");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("JSON Files", "*.json"));
-        File file = chooser.showSaveDialog(getStage());
-        if (file != null) {
-            try {
-                JsonUtil.getMapper().writeValue(file, recipe);
-            } catch (IOException ex) {
-                ex.printStackTrace();
+        try {
+            // 2) Pretty-print JSON and log it
+            var mapper = JsonUtil.getMapper().writerWithDefaultPrettyPrinter();
+            String json = mapper.writeValueAsString(recipe);
+            System.out.println("▶ Saving recipe JSON:\n" + json);
+
+            // 3) File chooser
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Save Recipe");
+            chooser.getExtensionFilters()
+                    .add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+            File file = chooser.showSaveDialog(getStage());
+            if (file == null)
+                return;
+
+            // 4) Write out
+            try (FileOutputStream out = new FileOutputStream(file)) {
+                mapper.writeValue(out, recipe);
             }
+
+            System.out.println("✔ Recipe saved to " + file.getAbsolutePath());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            // optionally show an alert so the user sees the error
+            Alert alert = new Alert(Alert.AlertType.ERROR,
+                    "Unable to save recipe:\n" + ex.getMessage(),
+                    ButtonType.OK);
+            alert.showAndWait();
         }
     }
 
@@ -118,10 +156,15 @@ public class RecipeEditorController {
         // go back to welcome
         Stage stage = getStage();
         try {
-            stage.getScene().setRoot(
-                    FXMLLoader.load(getClass().getResource("/com/example/WelcomeView.fxml")));
+            Parent welcome = FXMLLoader.load(
+                    getClass().getResource("/com/example/WelcomeView.fxml"));
+            stage.setScene(new Scene(welcome));
         } catch (IOException ex) {
             ex.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR,
+                    "Unable to load the welcome view:\n" + ex.getMessage(),
+                    ButtonType.OK);
+            alert.showAndWait();
         }
     }
 

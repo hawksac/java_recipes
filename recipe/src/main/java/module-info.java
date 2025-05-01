@@ -4,7 +4,9 @@ module com.example {
     requires transitive javafx.graphics;
     requires com.fasterxml.jackson.databind;
 
-    opens com.example to javafx.fxml;
+    // open your main package to both the FXML loader and the launcher
+    opens com.example to javafx.fxml, javafx.graphics;
 
-    exports com.example;
+    // open your model package to Jackson
+    opens com.example.model to com.fasterxml.jackson.databind;
 }
